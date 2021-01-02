@@ -1,0 +1,9 @@
+/.metadata
+/RemoteSystemsTempFiles
+/Servers
+.idea
+
+*/.classpath
+*/.settings
+*/.project
+*/target/*
