@@ -3,6 +3,7 @@ package com.joonsang.example.api;
 import com.joonsang.example.domain.Address;
 import com.joonsang.example.domain.Order;
 import com.joonsang.example.domain.OrderStatus;
+import com.joonsang.example.dto.OrderSimpleQueryDto;
 import com.joonsang.example.repository.OrderRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +109,7 @@ public class OrderSimpleApiController {
      *
      * - 장점 : Fetch join 으로 쿼리 1번 호출
      *         페치 조인으로 이미 조회 된 상태 이므로 지연로딩이 일어나지 않는다.
+     *         재사용성이 좋다.
      *
      * - 단점 : Entity 를 조회 하고 DTO 로 반환하여 불필요한 요소가 많음.
      */
@@ -120,5 +122,19 @@ public class OrderSimpleApiController {
         return result;
     }
 
+
+    /**
+     * 조회 V4: JPA 에서 DTO 로 바로 조회
+     *
+     * - 장점 : Fetch join 으로 쿼리 1번 호출
+     *         DTO 로 반환하여 불필요한 요소가 없음.
+     *
+     * - 단점 : 재사용성이 적다.
+     *         코드가 지저분하다.
+     */
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> ordersV4() {
+        return orderRepository.findOrderDtos();
+    }
 
 }
