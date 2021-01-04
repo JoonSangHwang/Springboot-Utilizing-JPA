@@ -20,6 +20,7 @@ public class OrderSimpleApiController {
 
     private final OrderRepository orderRepository;
 
+
     /**
      * 조회 V1: 엔티티 직접 노출
      *
@@ -103,10 +104,21 @@ public class OrderSimpleApiController {
 
 
     /**
-     * 잘 쓰다가 오늘 따라 기울어져 보이는 인텔리J
-     * 저만 그런가요...?
-     * 구글링 해도 기울기 관련은 없는데
-     * 계속 찾고 있는 중입니다.. ㅋㅋ
+     * 조회 V3: 엔티티를 조회해서 DTO 로 변환(fetch join 사용O)
+     *
+     * - 장점 : Fetch join 으로 쿼리 1번 호출
+     *         페치 조인으로 이미 조회 된 상태 이므로 지연로딩이 일어나지 않는다.
+     *
+     * - 단점 : Entity 를 조회 하고 DTO 로 반환하여 불필요한 요소가 많음.
      */
+    @GetMapping("/api/v3/simple-orders")
+    public List<SimpleOrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        List<SimpleOrderDto> result = orders.stream()
+                .map(o -> new SimpleOrderDto(o))
+                .collect(toList());
+        return result;
+    }
+
 
 }
