@@ -1,12 +1,18 @@
 package com.joonsang.example.api;
 
+import com.joonsang.example.domain.Address;
 import com.joonsang.example.domain.Order;
+import com.joonsang.example.domain.OrderStatus;
 import com.joonsang.example.repository.OrderRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,5 +53,60 @@ public class OrderSimpleApiController {
         }
         return all;
     }
+
+
+    /**
+     * 조회 V2: 엔티티를 조회해서 DTO 로 변환 (fetch join 사용X)
+     *
+     * - 해당 버전은 다음과 같은 문제를 발생 시킨다.
+     *
+     * - 내용 : Lazy 로딩으로 인한 N+1 문제
+     * - 증상 : 총 5번의 쿼리 발생
+     *         [1번째 쿼리] ㅡㅡㅡ order ㅡㅡㅡ member      [2번쨰 쿼리]
+     *                       |           |
+     *                       |            ㅡ delivery    [3번쨰 쿼리]
+     *                       |
+     *                        ㅡ order ㅡㅡㅡ member      [4번쨰 쿼리]
+     *                                   |
+     *                                    ㅡ member      [5번쨰 쿼리]
+     *
+     * - 이유 : Lazy 로딩은 Order 와 관련 된 객체는 모두 프록시 객체로 초기화 되어 있다.
+     *         그리하여 DB 조회 시, 그떄 그때 SQL 을 날리게 되므로 쿼리 수가 많아진다.
+     * - 해결 : fetch join 을 이용하자 (ordersV3 참고)
+     * - 참고 : 지연로딩은 영속성 컨텍스트에서 조회하므로, 이미 조회된 경우 쿼리를 생략한다.
+     */
+    @GetMapping("/api/v2/simple-orders")
+    public List<SimpleOrderDto> ordersV2() {
+        List<Order> orders = orderRepository.findAll();
+        List<SimpleOrderDto> result = orders.stream()
+                .map(o -> new SimpleOrderDto(o))
+                .collect(toList());
+        return result;
+    }
+
+    @Data
+    static class SimpleOrderDto {
+        private Long orderId;
+        private String name;                // 이름
+        private LocalDateTime orderDate;    // 주문시간
+        private OrderStatus orderStatus;    // 주문상태
+        private Address address;            // 주소
+
+        public SimpleOrderDto(Order order) {
+            orderId = order.getId();
+            name = order.getMember().getName();
+            orderDate = order.getOrderDate();
+            orderStatus = order.getStatus();
+            address = order.getDelivery().getAddress();
+        }
+    }
+
+
+    /**
+     * 잘 쓰다가 오늘 따라 기울어져 보이는 인텔리J
+     * 저만 그런가요...?
+     * 구글링 해도 기울기 관련은 없는데
+     * 계속 찾고 있는 중입니다.. ㅋㅋ
+     */
 
 }
