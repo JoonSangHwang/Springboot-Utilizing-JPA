@@ -15,7 +15,6 @@ public class OrderRepository {
     private EntityManager em;
 
     /**
-     *
      * 참고 : MVC 흐름 (의존 관계 측면에서 Repository 가 Controller 의 DTO 를 바라보면 이상해지므로... 별도의 DTO 패키지 생성)
      *
      * ----------------------------------------------------------------------------------------------
@@ -52,6 +51,9 @@ public class OrderRepository {
         return em.createQuery("select m from Order m", Order.class).getResultList();
     }
 
+    /**
+     * 주문 조회 V3
+     */
     public List<Order> findAllWithMemberDelivery() {
         return em.createQuery(
                 "select o from Order o" +
@@ -60,10 +62,12 @@ public class OrderRepository {
                 .getResultList();
     }
 
+    /**
+     * 주문 조회 V4
+     */
     public List<OrderSimpleQueryDto> findOrderDtos() {
 
         /**
-         *
          * 별도의 DTO 를 반환하는 JPQL
          *
          * 1. OrderSimpleQueryDto 객체의 생성자는 파라미터를 필수로 입력 받아야 한다.
@@ -77,6 +81,25 @@ public class OrderRepository {
                         " from Order o" +
                         " join o.member m" +
                         " join o.delivery d", OrderSimpleQueryDto.class)
+                .getResultList();
+    }
+
+
+    /**
+     * 주문 컬렉션 조회 V3
+     */
+    public List<Order> findAllWithItem() {
+
+        /**
+         * Collect 조회 시, row 가 증가한 값이 나온다.
+         * JPQL 에서의 distinct 는... SQL 에 distinct 를 추가하고 같은 엔티티가 조회되면 Application 에서 중복을 걸러준다.
+         */
+        return em.createQuery(
+                "select distinct o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d" +
+                        " join fetch o.orderItems oi" +
+                        " join fetch oi.item i", Order.class)
                 .getResultList();
     }
 }

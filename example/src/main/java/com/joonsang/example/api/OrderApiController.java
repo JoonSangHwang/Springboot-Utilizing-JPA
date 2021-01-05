@@ -71,7 +71,9 @@ public class OrderApiController {
      *                                   |
      *                                    ㅡ OrderItem   [9번쨰 쿼리]
      *
+     *
      * - 참고 : DTO 안에 Entity 가 존재하면 안됨. DTO 안에 DTO 생성 !
+     * - 참고 : 지연로딩은 영속성 컨텍스트에서 조회하므로, 이미 조회된 경우 쿼리를 생략한다.
      */
     @GetMapping("/api/v2/orders")
     public List<OrderDto> ordersV2() {
@@ -113,6 +115,37 @@ public class OrderApiController {
             orderPrice = orderItem.getOrderPrice();
             count = orderItem.getCount();
         }
+    }
+
+    /**
+     * 주문 V3: 엔티티를 조회해서 DTO 로 변환(fetch join 사용O)
+     *
+     * - 해당 버전은 다음과 같은 문제를 발생 시킨다.
+     *
+     * - 내용 : 페이징 불가능
+     * - 증상 : firstResult/maxResults specified with collection fetch; applying in memory
+     * - 이유 : 현재 조회 되는 Order 는 2개이지만, 1:N 관계라 실제 SQL Join 시 4개가 나온다.
+     *         row 수가 상이하여 SQL 에서 페이징이 불가능하다.
+     *         그리하여 JPA 에서는 In Memory 에서 데이터를 페이징 처리 해주는데... OutOfMemory 위험성이 크다.
+     * - 해결 : fetch join 을 이용하자 (ordersV3 참고)
+     * - 참고 : 컬렉션 페치 조인은 1개만 사용할 수 있다.
+     *         컬렉션 둘 이상에 페치 조인을 사용하면 안된다. 데이터가 부정합하게 조회될 수 있다.
+     *
+     * ----------------------------------------------------------------------------------
+     *
+     * - 장점 : Fetch join 으로 쿼리 1번 호출
+     *         페치 조인으로 이미 조회 된 상태 이므로 지연로딩이 일어나지 않는다. 재사용성이 좋다.
+     *
+     * - 단점 : Entity 를 조회 하고 DTO 로 반환하여 불필요한 요소가 많음.
+     *
+     */
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithItem();
+        List<OrderDto> result = orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect(toList());
+        return result;
     }
 
 }
