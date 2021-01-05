@@ -77,7 +77,7 @@ public class OrderSimpleApiController {
      *                       |
      *                        ㅡ Order ㅡㅡㅡ Member      [4번쨰 쿼리]
      *                                   |
-     *                                    ㅡ Delivery     [5번쨰 쿼리]
+     *                                    ㅡ Delivery    [5번쨰 쿼리]
      *
      * - 이유 : Lazy 로딩은 Order 와 관련 된 객체는 모두 프록시 객체로 초기화 되어 있다.
      *         그리하여 DB 조회 시, 그떄 그때 SQL 을 날리게 되므로 쿼리 수가 많아진다.
