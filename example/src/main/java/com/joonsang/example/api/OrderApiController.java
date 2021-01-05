@@ -4,6 +4,7 @@ import com.joonsang.example.domain.Address;
 import com.joonsang.example.domain.Order;
 import com.joonsang.example.domain.OrderItem;
 import com.joonsang.example.domain.OrderStatus;
+import com.joonsang.example.dto.OrderQueryDto;
 import com.joonsang.example.repository.OrderRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -201,6 +202,19 @@ public class OrderApiController {
                 .map(o -> new OrderDto(o))
                 .collect(toList());
         return result;
+    }
+
+
+    /**
+     * 주문 V4: JPA 에서 DTO 직접 조회
+     *
+     * - XToOne 은 Fetch Join 조회
+     * - OneToX 은 Collection 이므로 별도로 조회
+     * - N+1 문제
+     */
+    @GetMapping("/api/v4/orders")
+    public List<OrderQueryDto> ordersV4() {
+        return orderRepository.findOrderQueryDtos();
     }
 
 }

@@ -1,6 +1,8 @@
 package com.joonsang.example.repository;
 
 import com.joonsang.example.domain.Order;
+import com.joonsang.example.dto.OrderItemQueryDto;
+import com.joonsang.example.dto.OrderQueryDto;
 import com.joonsang.example.dto.OrderSimpleQueryDto;
 import org.springframework.stereotype.Repository;
 
@@ -115,6 +117,53 @@ public class OrderRepository {
                         " join fetch o.delivery d", Order.class)
                 .setFirstResult(offset)
                 .setMaxResults(limit)
+                .getResultList();
+    }
+
+
+    /**
+     * 주문 컬렉션 조회 V4
+     *
+     * Query: 루트 1번 + 컬렉션 N 번 = N+1 문제
+     * 단건 조회에서 많이 사용하는 방식
+     */
+    public List<OrderQueryDto> findOrderQueryDtos() {
+
+        // XToOne 모두 조회 -> 1번의 쿼리
+        List<OrderQueryDto> result = findOrders();
+
+        // OneToX 모두 조회 -> N번의 쿼리
+        result.forEach(o -> {
+            // 데이터를 하나씩 찍어서, DTO 로 직접 조회하는 경우에는 fetch join 을 사용할 수 없음.
+            List<OrderItemQueryDto> orderItems = findOrderItems(o.getOrderId());
+            o.setOrderItems(orderItems);
+        });
+
+        return result;
+    }
+
+    /**
+     * 1:N 관계(컬렉션)를 제외한 나머지를 한번에 조회
+     */
+    private List<OrderQueryDto> findOrders() {
+        return em.createQuery(
+                "select new jpabook.jpashop.repository.order.query.OrderQueryDto(o.id, m.name, o.orderDate, o.status, d.address)" +
+                        " from Order o" +
+                        " join o.member m" +
+                        " join o.delivery d", OrderQueryDto.class)
+                .getResultList();
+    }
+
+    /**
+     * 1:N 관계인 orderItems 조회
+     */
+    private List<OrderItemQueryDto> findOrderItems(Long orderId) {
+        return em.createQuery(
+                "select new jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name,oi.orderPrice, oi.count)" +
+                        " from OrderItem oi" +
+                        " join oi.item i" +
+                        " where oi.order.id = : orderId", OrderItemQueryDto.class)
+                .setParameter("orderId", orderId)
                 .getResultList();
     }
 }
