@@ -4,6 +4,8 @@ import com.joonsang.example.domain.Address;
 import com.joonsang.example.domain.Order;
 import com.joonsang.example.domain.OrderItem;
 import com.joonsang.example.domain.OrderStatus;
+import com.joonsang.example.dto.OrderFlatDto;
+import com.joonsang.example.dto.OrderItemQueryDto;
 import com.joonsang.example.dto.OrderQueryDto;
 import com.joonsang.example.repository.OrderRepository;
 import lombok.Data;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.mapping;
 
 /**
  * 컬렉션 조회 최적화
@@ -230,5 +234,46 @@ public class OrderApiController {
     @GetMapping("/api/v5/orders")
     public List<OrderQueryDto> ordersV5() {
         return orderRepository.findAllByDto_optimization();
+    }
+
+    /**
+     * 주문 컬렉션 조회 V6
+     *
+     * - 장점
+     *  : Query 1번
+     *
+     * - 단점
+     *  : 쿼리는 한번이지만 조인으로 인해 DB 에서 애플리케이션에 전달하는 데이터에 중복 데이터가 추가되므로 상황에 따라 V5 보다 더 느릴 수 도 있다.
+     *  : 애플리케이션에서 추가 작업이 크다.
+     *  : 페이징 불가능
+     */
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> ordersV6() {
+
+        List<OrderFlatDto> flats = orderRepository.findAllByDto_flat();
+
+        /**
+         * group by 할 때, new OrderQueryDto 객체니까 ID를 알려줘야한다.
+         * 그러므로 OrderQueryDto 에 Equals hash code 를 구현 또는 선언해주며 묶어준다.
+         */
+        return flats.stream()
+                .collect(groupingBy(o -> new OrderQueryDto( o.getOrderId(),
+                                                            o.getName(),
+                                                            o.getOrderDate(),
+                                                            o.getOrderStatus(),
+                                                            o.getAddress()),
+                        mapping(o -> new OrderItemQueryDto( o.getOrderId(),
+                                                            o.getItemName(),
+                                                            o.getOrderPrice(),
+                                                            o.getCount()),
+                                                            toList())
+                )).entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(),
+                                            e.getKey().getName(),
+                                            e.getKey().getOrderDate(),
+                                            e.getKey().getOrderStatus(),
+                                            e.getKey().getAddress(),
+                                            e.getValue()))
+                .collect(toList());
     }
 }

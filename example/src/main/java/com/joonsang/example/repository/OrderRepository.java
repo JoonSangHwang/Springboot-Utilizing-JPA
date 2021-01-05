@@ -1,6 +1,7 @@
 package com.joonsang.example.repository;
 
 import com.joonsang.example.domain.Order;
+import com.joonsang.example.dto.OrderFlatDto;
 import com.joonsang.example.dto.OrderItemQueryDto;
 import com.joonsang.example.dto.OrderQueryDto;
 import com.joonsang.example.dto.OrderSimpleQueryDto;
@@ -149,7 +150,7 @@ public class OrderRepository {
      */
     private List<OrderQueryDto> findOrders() {
         return em.createQuery(
-                "select new jpabook.jpashop.repository.order.query.OrderQueryDto(o.id, m.name, o.orderDate, o.status, d.address)" +
+                "select new com.joonsang.example.dto.OrderQueryDto(o.id, m.name, o.orderDate, o.status, d.address)" +
                         " from Order o" +
                         " join o.member m" +
                         " join o.delivery d", OrderQueryDto.class)
@@ -161,7 +162,7 @@ public class OrderRepository {
      */
     private List<OrderItemQueryDto> findOrderItems(Long orderId) {
         return em.createQuery(
-                "select new jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name,oi.orderPrice, oi.count)" +
+                "select new com.joonsang.example.dto.OrderItemQueryDto(oi.order.id, i.name,oi.orderPrice, oi.count)" +
                         " from OrderItem oi" +
                         " join oi.item i" +
                         " where oi.order.id = : orderId", OrderItemQueryDto.class)
@@ -197,7 +198,7 @@ public class OrderRepository {
 
     private Map<Long, List<OrderItemQueryDto>> findOrderItemMap(List<Long> orderIds) {
         List<OrderItemQueryDto> orderItems = em.createQuery(
-                "select new jpabook.jpashop.repository.order.query.OrderItemQueryDto(oi.order.id, i.name, oi.orderPrice, oi.count)" +
+                "select new com.joonsang.example.dto.OrderItemQueryDto(oi.order.id, i.name, oi.orderPrice, oi.count)" +
                         " from OrderItem oi" +
                         " join oi.item i" +
                         " where oi.order.id in :orders", OrderItemQueryDto.class)
@@ -205,5 +206,24 @@ public class OrderRepository {
                 .getResultList();
         return orderItems.stream()
                 .collect(Collectors.groupingBy(OrderItemQueryDto::getOrderId));
+    }
+
+    /**
+     * 주문 컬렉션 조회 V6
+     *
+     * - Query: 1번
+     * - 쿼리는 한번이지만 조인으로 인해 DB 에서 애플리케이션에 전달하는 데이터에 중복 데이터가 추가되므로 상황에 따라 V5 보다 더 느릴 수 도 있다.
+     * - 애플리케이션에서 추가 작업이 크다.
+     * - 페이징 불가능
+     */
+    public List<OrderFlatDto> findAllByDto_flat() {
+        return em.createQuery(
+                "select new com.joonsang.example.dto.OrderFlatDto(o.id, m.name, o.orderDate, o.status, d.address, i.name, oi.orderPrice, oi.count)" +
+                        " from Order o" +
+                        " join o.member m" +
+                        " join o.delivery d" +
+                        " join o.orderItems oi" +
+                        " join oi.item i", OrderFlatDto.class)
+                .getResultList();
     }
 }
