@@ -31,7 +31,7 @@ public class OrderApiController {
 
 
     /**
-     * 주문 조회 V1: 엔티티 직접 노출
+     * 주문 컬렉션 조회 V1: 엔티티 직접 노출
      */
     @GetMapping("/api/v1/orders")
     public List<Order> ordersV1() {
@@ -53,7 +53,7 @@ public class OrderApiController {
 
 
     /**
-     * 주문 조회 V2: 엔티티를 조회해서 DTO 로 변환 (fetch join 사용X)
+     * 주문 컬렉션 조회 V2: 엔티티를 조회해서 DTO 로 변환 (fetch join 사용X)
      *
      * - 해당 버전은 다음과 같은 문제를 발생 시킨다.
      *
@@ -123,7 +123,7 @@ public class OrderApiController {
 
 
     /**
-     * 주문 V3: 엔티티를 조회해서 DTO 로 변환(fetch join 사용O)
+     * 주문 컬렉션 조회 V3: 엔티티를 조회해서 DTO 로 변환(fetch join 사용O)
      *
      * - 해당 버전은 다음과 같은 문제를 발생 시킨다.
      *
@@ -156,7 +156,7 @@ public class OrderApiController {
 
 
     /**
-     * 주문 V3.1: 엔티티를 조회해서 DTO 로 변환 페이징 고려
+     * 주문 컬렉션 조회 V3.1: 엔티티를 조회해서 DTO 로 변환 페이징 고려
      *
      * - 대부분의 페이징 + 컬렉션 엔티티 조회 문제는 이 방법으로 해결할 수 있다
      *
@@ -206,15 +206,29 @@ public class OrderApiController {
 
 
     /**
-     * 주문 V4: JPA 에서 DTO 직접 조회
+     * 주문 컬렉션 조회 V4
      *
-     * - XToOne 은 Fetch Join 조회
-     * - OneToX 은 Collection 이므로 별도로 조회
-     * - N+1 문제
+     * - Query: 루트 1번 + 컬렉션 N 번 = N+1 문제
+     * - 단건 조회에서 많이 사용하는 방식
+     *
+     * - 단점 : N+1 문제
      */
     @GetMapping("/api/v4/orders")
     public List<OrderQueryDto> ordersV4() {
         return orderRepository.findOrderQueryDtos();
     }
 
+    /**
+     * 주문 컬렉션 조회 V5
+     *
+     * - Query: 루트 1번, 컬렉션 1번
+     * - 데이터를 한꺼번에 처리할 때 많이 사용하는 방식
+     * - N+1 문제 해결
+     *
+     * - 단점 : 한방 쿼리가 아님
+     */
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5() {
+        return orderRepository.findAllByDto_optimization();
+    }
 }
