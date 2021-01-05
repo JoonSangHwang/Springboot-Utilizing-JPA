@@ -102,4 +102,19 @@ public class OrderRepository {
                         " join fetch oi.item i", Order.class)
                 .getResultList();
     }
+
+    /**
+     * 주문 컬렉션 조회 V3.1
+     *
+     * - 먼저 XToOne 관계만 Fetch Join
+     */
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery(
+                "select o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
 }
