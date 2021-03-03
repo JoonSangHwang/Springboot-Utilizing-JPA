@@ -36,8 +36,8 @@ public class OrderSimpleApiController {
      * 1번 문제
      * - 내용 : 무한 순환 참조
      * - 증상 : 양방향 연관관계 조회 시, 무한 순환 참조
-     * - 이유 : Order Entity와 연관되어 있는 Member/Delivery/OrderItem 를 JSON BeanSerializer (객체 -> JSON) 시도
-     *         JsonSerializer가 toString()을 호출할 때 property 들을 매핑하는 과정에서 Getter 의 무한 순환 참조
+     * - 이유 : Order Entity 와 연관되어 있는 Member/Delivery/OrderItem 를 JSON BeanSerializer (객체 -> JSON) 시도
+     *         JsonSerializer 가 toString()을 호출할 때 property 들을 매핑하는 과정에서 Getter 의 무한 순환 참조
      * - 해결 : 한 방향만 @JsonIgnore 를 붙인다.
      *         [Member 객체의 orders] , [OrderItem 객체의 item] , [Delivery 객체의 order]
      *
@@ -57,8 +57,8 @@ public class OrderSimpleApiController {
     public List<Order> ordersV1() {
         List<Order> all = orderRepository.findAll();
         for (Order order : all) {
-            order.getMember().getName(); //Lazy 강제 초기화
-            order.getDelivery().getAddress(); //Lazy 강제 초기화
+            order.getMember().getName();        //Lazy 강제 초기화 (order.getMember() 까지는 Proxy 객치지만, getName() 을 함으로써 강제 초기화 됨)
+            order.getDelivery().getAddress();   //Lazy 강제 초기화 (order.getDelivery() 까지는 Proxy 객치지만, getAddress() 을 함으로써 강제 초기화 됨)
         }
         return all;
     }
