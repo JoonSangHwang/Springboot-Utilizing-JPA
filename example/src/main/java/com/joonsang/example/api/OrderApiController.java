@@ -43,7 +43,7 @@ public class OrderApiController {
         // Order Table
         for (Order order : all) {
             order.getMember().getName();                                //Lazy 강제 초기화
-            order.getDelivery().getAddress();                           //Lazy 강제 초기환
+            order.getDelivery().getAddress();                           //Lazy 강제 초기화
 
             // OrderItem Table
             List<OrderItem> orderItems = order.getOrderItems();
@@ -225,9 +225,11 @@ public class OrderApiController {
     /**
      * 주문 컬렉션 조회 V5
      *
+     * - 일대다 관계인 컬렉션은 IN 절을 활용해서 메모리에 미리 조회해서 최적화
      * - Query: 루트 1번, 컬렉션 1번
      * - 데이터를 한꺼번에 처리할 때 많이 사용하는 방식
      * - N+1 문제 해결
+     * - V4 보다 성능 우수
      *
      * - 단점 : 한방 쿼리가 아님
      */
@@ -238,6 +240,10 @@ public class OrderApiController {
 
     /**
      * 주문 컬렉션 조회 V6
+     *
+     * - JOIN 결과를 그대로 조회 후, 애플리케이션에서 원하는 모양으로 직접 변환
+     * - 데이터가 많으면 중복 전송이 증가해서 V5와 비교해서 성능 차이도 미비하다
+     * - 오히려 정규화 된 데이터를 2번 조회하는 V5 가 복잡한 쿼리 1번으로 조회하는 V6 의 성능이 더 잘나올 수도 있다.
      *
      * - 장점
      *  : Query 1번

@@ -97,7 +97,8 @@ public class OrderRepository {
 
         /**
          * Collect 조회 시, row 가 증가한 값이 나온다.
-         * JPQL 에서의 distinct 는... SQL 에 distinct 를 추가하고 같은 엔티티가 조회되면 Application 에서 중복을 걸러준다.
+         * JPQL 에서의 distinct 는... SQL 에 distinct 를 추가하고,
+         * 루트(Order)가 같은 엔티티가 조회되면 Application 에서 중복을 걸러준다.
          */
         return em.createQuery(
                 "select distinct o from Order o" +
